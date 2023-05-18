@@ -9,7 +9,6 @@ import com.example.Bank_Application.Implements.CustomerControllerImple;
 import com.example.Bank_Application.Services.CustomerService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.text.ParseException;
@@ -45,17 +44,23 @@ public class CustomerController {
         return customerService.updateProfile(commonDto);
     }
 
-    @PatchMapping(value = "/changepassword")
-    public ApiResponse changePassword(@RequestBody CommonDto commonDto) throws Exception {
-        return customerService.changePassword(commonDto);
+    @PutMapping(value = "/changepassword")
+    public ApiResponse changePassword(@RequestParam("password") String password,
+                                      @RequestParam("newPassword")String newPassword,
+                                      @RequestBody CommonDto commonDto) throws Exception {
+        return customerService.changePassword(password,newPassword,commonDto);
     }
 
     @PostMapping("/forgotpassword")
     public ApiResponse forgotPassword(@RequestParam("emailID") String emailID) {
-       return customerService.requestPasswordReset(emailID);
+       return customerService.forgotPassword(emailID);
     }
-//    @PutMapping("/resetpassword")
-//    public ApiResponse resetPassword(@RequestBody CustomerDTO token) throws Exception {
-//       return customerService.resetPassword(token);
-//    }
+    @PutMapping("/resetpassword")
+    public ApiResponse resetPassword(@RequestBody CommonDto commonDto) throws Exception {
+       return customerService.resetPassword(commonDto);
+    }
+    @GetMapping(value = "/getbalance/{accountnumber}")
+    public ApiResponse getBalance(@PathVariable("accountnumber") String accountNumber){
+        return customerService.getBalance(accountNumber);
+    }
 }

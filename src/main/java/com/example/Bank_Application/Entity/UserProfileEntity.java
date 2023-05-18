@@ -42,6 +42,14 @@ public class UserProfileEntity {
     private  String city;
     @Column(name = "userId")
     private Long userId;
+    @Column(name = "balance")
+    private  Long balance;
+    @Column(name = "initial_amount")
+    private  Long initialAmount;
+//    @Column(name = "toAccount")
+//    private  String toAccount;
+//    @Column(name = "fromAccount")
+//    private String fromAccount;
 
 
 }

@@ -32,5 +32,6 @@ public class UserProfileDTO {
   @NotEmpty(message = "Please Enter CityName")
     private  String city;
     private String userName;
+    private  Long balance;
 
 }

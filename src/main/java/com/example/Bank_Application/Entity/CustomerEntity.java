@@ -35,6 +35,8 @@ public class CustomerEntity  implements Serializable {
     private Long loginAt;
     @Column(name = "updateAt")
     private Long updateAt;
+    @Column(name = "otpNumber")
+    private Long otpNumber;
 
 
 }

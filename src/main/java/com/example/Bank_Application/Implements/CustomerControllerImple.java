@@ -22,9 +22,12 @@ public interface CustomerControllerImple {
     ApiResponse updateProfile(CommonDto commonDto)throws Exception;
 
 
-    ApiResponse changePassword(CommonDto commonDto) throws Exception;
 
-    ApiResponse requestPasswordReset(String emailID);
+    ApiResponse forgotPassword(String emailID);
 
-//    ApiResponse resetPassword(CustomerDTO token) throws Exception;
+    ApiResponse resetPassword(CommonDto commonDto) throws Exception;
+
+    ApiResponse getBalance(String accountNumber);
+
+    ApiResponse changePassword(String password, String newPassword, CommonDto commonDto) throws Exception;
 }

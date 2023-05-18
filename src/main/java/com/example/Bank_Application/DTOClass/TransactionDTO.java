@@ -1,29 +1,30 @@
 package com.example.Bank_Application.DTOClass;
 
 import jakarta.persistence.Column;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @AllArgsConstructor
 @NoArgsConstructor
-@Data
+@Setter
+@Getter
 public class TransactionDTO {
     private  Long id;
-    private  Long balance;
-    private  Long accountNumber;
+    private LocalDate currentDate;
+
     private Long withDrawAmount;
     private  Long depositAmount;
-    private  Long initialAmount;
     private  String fromAccount;
     private String  toAccount;
-    private Long userId;
-    private Long withdrawAt;
-    private Long deposit;
+
+    private String withdrawAt;
+    private String depositAt;
     private String depositBy;
     private String withdrawBy;
     private Long depositDateTime;
     private Long withdrawDateTime;
+    private  String accountNumber;
+    private  Long balance;
 }

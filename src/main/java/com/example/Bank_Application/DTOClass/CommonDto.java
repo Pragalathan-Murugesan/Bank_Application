@@ -14,13 +14,13 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class CommonDto {
 
-
-
     private  Long id;
     @NotNull(message = "Required Type Name")
     @NotEmpty(message = "Please Enter Name")
     @Size(min = 2, max = 20)
     private String userName;
+    private String newPassword;
+
     @NotNull(message = "Required Type Password")
     @NotEmpty(message = "Please Enter Password")
     @Size(min = 8, max = 15)
@@ -33,6 +33,10 @@ public class CommonDto {
     private Long phoneNumber;
     private Long createAt;
     private Long loginAt;
+    private String conformPassword;
+
+    private Long otpNumber;
+
 
 
 

@@ -39,11 +39,7 @@ public class CustomerDTO {
     private Long phoneNumber;
     private Long createAt;
     private Long loginAt;
+    private  String conformPassword;
 
 
-//    @Column(name = "token")
-//    private String token;
-
-//    @Column(name = "token_expiration")
-//    private LocalDateTime tokenExpiration;
 }

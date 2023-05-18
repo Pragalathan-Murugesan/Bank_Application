@@ -14,6 +14,7 @@ import com.example.Bank_Application.Repository.TransactionRepo;
 import com.example.Bank_Application.Repository.UserProfileRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.util.*;
@@ -33,56 +34,43 @@ public class CustomerService implements CustomerControllerImple {
 
 
     public ApiResponse createAccount(CommonDto commonDto) throws Exception {
-        TransactionDTO transactionDTO  = new TransactionDTO();
         String sts = "904739";
         Random random = new Random();
         String num = String.valueOf(random.nextLong(1100000000));
         String data = sts + num;
         try {
             CustomerEntity create = new CustomerEntity();
+            BCryptPasswordEncoder bCryptPasswordEncoder = new BCryptPasswordEncoder();
+            String encryptPwd = bCryptPasswordEncoder.encode(commonDto.getPassword());
+            create.setPassword(encryptPwd);
             create.setUserName(commonDto.getUserName());
-            create.setPassword(commonDto.getPassword());
             create.setEmailID(commonDto.getEmailID());
             create.setPhoneNumber(commonDto.getPhoneNumber());
-
-
             Long epochTime = Instant.now().getEpochSecond();
             create.setCreateAt(epochTime);
             customerRepo.save(create);
 
             UserProfileEntity add = new UserProfileEntity();
             add.setAccountNumber(data);
-            if (add.getAccountNumber()!=null){
-                add.setActive(true);
-            }else{
-                add.setBlock(false);
-            }
+            add.setActive(true);
             add.setUserId(create.getId());
             Long epochTime1 = Instant.now().getEpochSecond();
             add.setCreateAt(epochTime1);
             add.setCity(commonDto.getCity());
-
+            add.setInitialAmount(commonDto.getInitialAmount());
+            Long initialAmount = commonDto.getInitialAmount();
+            Long balance = 0L;
+            balance += initialAmount;
+            add.setBalance(balance);
             add.setBranch(commonDto.getBranch());
             add.setAccountType(commonDto.getAccountType());
             add.setBranchCode(commonDto.getBranchCode());
             add.setIfscNumber(commonDto.getIfscNumber());
             userProfileRepo.save(add);
-
-            TransactionEntity transactionEntity = new TransactionEntity();
-            transactionEntity.setUserId(create.getId());
-            transactionEntity.setAccountNumber(add.getAccountNumber());
-            transactionEntity.setInitialAmount(commonDto.getInitialAmount());
-//            transactionEntity.setBalance(commonDto.getInitialAmount());
-            Long initialAmount = transactionEntity.getInitialAmount();
-//            Long balance2 = commonDto.getBalance();
-            Long balance = 0L;
-            balance +=  initialAmount;
-            transactionEntity.setBalance(balance);
-            transactionRepo.save(transactionEntity);
             HashMap<String, Object> data1 = new HashMap<>();
             data1.put("table2", add);
             data1.put("table1", create);
-            apiResponse.setError(HttpStatus.ACCEPTED.value());
+            apiResponse.setError(HttpStatus.OK.value());
             apiResponse.setMessage("Account Created Successfully");
             apiResponse.setData(data1);
         } catch (Exception e) {
@@ -103,25 +91,24 @@ public class CustomerService implements CustomerControllerImple {
     @Override
     public ApiResponse login(CustomerDTO customerDTO) throws Exception {
         try {
-            CustomerEntity customerEntity = customerRepo.findOneByEmailIDIgnoreCaseAndPassword(customerDTO.getEmailID(), customerDTO.getPassword());
+            BCryptPasswordEncoder bCryptPasswordEncoder = new BCryptPasswordEncoder();
+
+            CustomerEntity customerEntity = customerRepo.findOneByEmailIDIgnoreCaseAndPassword(customerDTO.getEmailID(), String.valueOf(bCryptPasswordEncoder.matches(customerDTO.getPassword(),customerDTO.getPassword())));
             if (customerEntity == null) {
                 apiResponse.setData("null");
                 apiResponse.setMessage("Login Failed");
-                apiResponse.setError(HttpStatus.NOT_FOUND.value());
+                apiResponse.setError(HttpStatus.BAD_REQUEST.value());
                 return apiResponse;
             }
             Long currentTimestamp = Instant.now().getEpochSecond();
             customerEntity.setLoginAt(currentTimestamp);
-            customerRepo.save(customerEntity);
-
-            Long epochTime1 = Instant.now().getEpochSecond();
-            customerEntity.setUpdateAt(epochTime1);
+            customerEntity.setUpdateAt(currentTimestamp);
             customerRepo.save(customerEntity);
 
             String token = jwtTokens.generateToken(new CustomerEntity());
             Map<String, Object> data = new HashMap<>();
             data.put("token", token);
-            apiResponse.setError(HttpStatus.ACCEPTED);
+            apiResponse.setError(HttpStatus.OK);
             apiResponse.setMessage("Login Successfully");
             apiResponse.setData(data);
         } catch (Exception e) {
@@ -132,10 +119,9 @@ public class CustomerService implements CustomerControllerImple {
 
     public ApiResponse getAll() {
         List<CustomerEntity> get = customerRepo.findAll();
-
         apiResponse.setData(get);
         apiResponse.setMessage("Data Received");
-        apiResponse.setError(HttpStatus.ACCEPTED.value());
+        apiResponse.setError(HttpStatus.OK.value());
         return apiResponse;
     }
 
@@ -143,7 +129,6 @@ public class CustomerService implements CustomerControllerImple {
         try {
 
             CustomerEntity customerEntity1 = customerRepo.update(commonDto.getUserName());
-            customerEntity1.setPassword(commonDto.getPassword());
             Long currentTimestamp1 = Instant.now().getEpochSecond();
             customerEntity1.setUpdateAt(currentTimestamp1);
             customerRepo.save(customerEntity1);
@@ -151,14 +136,13 @@ public class CustomerService implements CustomerControllerImple {
             UserProfileEntity userProfileEntity = userProfileRepo.update(commonDto.getUserId());
             userProfileEntity.setBranch(commonDto.getBranch());
             userProfileEntity.setCity(commonDto.getCity());
-            Long currentTimestamp = Instant.now().getEpochSecond();
             userProfileEntity.setUpdateAt(currentTimestamp1);
             userProfileRepo.save(userProfileEntity);
 
             HashMap<String, Object> data = new HashMap<>();
             data.put("table2", userProfileEntity);
             data.put("table1", customerEntity1);
-            apiResponse.setError(HttpStatus.ACCEPTED.value());
+            apiResponse.setError(HttpStatus.OK.value());
             apiResponse.setData(data);
             apiResponse.setMessage("Data Updated Successfully");
         } catch (Exception e) {
@@ -167,27 +151,71 @@ public class CustomerService implements CustomerControllerImple {
         return apiResponse;
     }
 
-    public ApiResponse changePassword(CommonDto commonDto) throws Exception {
+    public ApiResponse changePassword(String password, String newPassword, CommonDto commonDto) throws Exception {
         try {
-            CustomerEntity customerEntity = customerRepo.changePwd(commonDto.getUserName());
-            customerEntity.setPassword(commonDto.getPassword());
-            customerRepo.save(customerEntity);
-            apiResponse.setMessage("Password Updated Successfully");
-            apiResponse.setData(customerEntity);
-            apiResponse.setError(HttpStatus.ACCEPTED.value());
+            BCryptPasswordEncoder bCryptPasswordEncoder = new BCryptPasswordEncoder();
+           CustomerEntity customerEntity1 = new CustomerEntity();
+
+            CustomerEntity customerEntity = customerRepo.changePwd(commonDto.getPassword());
+            String encrypt = bCryptPasswordEncoder.encode(newPassword);
+            if (password!=newPassword){
+                customerEntity.setPassword(encrypt);
+                customerRepo.save(customerEntity);
+                apiResponse.setMessage("Password Updated Successfully");
+                apiResponse.setData(customerEntity);
+                apiResponse.setError(HttpStatus.OK.value());
+            }else {
+                apiResponse.setMessage("Please Enter Correct Password");
+                apiResponse.setData(customerEntity);
+                apiResponse.setError(HttpStatus.BAD_REQUEST.value());
+            }
         } catch (Exception e) {
             throw new Exception(e.getMessage());
         }
         return apiResponse;
     }
-    public ApiResponse requestPasswordReset(String emailID) {
+
+    public ApiResponse forgotPassword(String emailID) {
         CustomerEntity customerEntity = customerRepo.findByEmailID(emailID);
         Random random = new Random();
         String num = String.valueOf(random.nextLong(1100000000));
         Long otpNumber = Long.valueOf(num);
-        apiResponse.setMessage(" Reset Password Successfully");
-        apiResponse.setError(HttpStatus.ACCEPTED.value());
+        customerEntity.setOtpNumber(otpNumber);
+        customerRepo.save(customerEntity);
+        apiResponse.setMessage(" Reset Password Otp is:");
+        apiResponse.setError(HttpStatus.OK.value());
         apiResponse.setData(otpNumber);
+        return apiResponse;
+    }
+
+    @Override
+    public ApiResponse resetPassword(CommonDto commonDto) throws Exception {
+        CustomerEntity customerEntity = customerRepo.resetPassword(commonDto.getOtpNumber());
+
+        commonDto.setNewPassword(commonDto.getNewPassword());
+        commonDto.setConformPassword(commonDto.getConformPassword());
+        if (commonDto.getNewPassword()==commonDto.getConformPassword()){
+            customerEntity.setPassword(commonDto.getConformPassword());
+            customerRepo.save(customerEntity);
+            apiResponse.setError(HttpStatus.OK.value());
+            apiResponse.setData(customerEntity);
+            apiResponse.setMessage("Reset Password Successfully");
+        }else {
+            apiResponse.setError(HttpStatus.BAD_REQUEST.value());
+            apiResponse.setData(null);
+            apiResponse.setMessage("Please Enter Same Password");
+        }
+
+        return apiResponse;
+}
+
+    @Override
+    public ApiResponse getBalance( String accountNumber) {
+        UserProfileEntity userProfileEntity = userProfileRepo.getByBalance(accountNumber);
+       Long balance =  userProfileEntity.getBalance();
+        apiResponse.setError(HttpStatus.OK.value());
+        apiResponse.setData(balance);
+        apiResponse.setMessage("This Account Balance Is:");
         return apiResponse;
     }
 }
