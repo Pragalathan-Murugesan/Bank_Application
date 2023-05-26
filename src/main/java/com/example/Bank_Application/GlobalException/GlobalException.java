@@ -37,12 +37,12 @@ public class GlobalException {
 //        apiResponse.setData("null");
 //        return apiResponse;
 //   }
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ApiResponse IllegalException(IllegalArgumentException e){
-        apiResponse.setMessage("Unauthorized Access");
-        apiResponse.setData(null);
-        apiResponse.setError(HttpStatus.UNAUTHORIZED.value());
-        return apiResponse;
-    }
+//    @ExceptionHandler(IllegalArgumentException.class)
+//    public ApiResponse IllegalException(IllegalArgumentException e){
+//        apiResponse.setMessage("Unauthorized Access");
+//        apiResponse.setData(null);
+//        apiResponse.setError(HttpStatus.UNAUTHORIZED.value());
+//        return apiResponse;
+//    }
     }
 

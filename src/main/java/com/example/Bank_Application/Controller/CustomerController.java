@@ -45,19 +45,16 @@ public class CustomerController {
     }
 
     @PutMapping(value = "/changepassword")
-    public ApiResponse changePassword(@RequestParam("password") String password,
-                                      @RequestParam("newPassword")String newPassword,
-                                      @RequestBody CommonDto commonDto) throws Exception {
-        return customerService.changePassword(password,newPassword,commonDto);
+    public ApiResponse changePassword(@RequestBody CustomerDTO customerDTO) throws Exception {
+        return customerService.changePassword(customerDTO);
     }
-
     @PostMapping("/forgotpassword")
     public ApiResponse forgotPassword(@RequestParam("emailID") String emailID) {
        return customerService.forgotPassword(emailID);
     }
     @PutMapping("/resetpassword")
-    public ApiResponse resetPassword(@RequestBody CommonDto commonDto) throws Exception {
-       return customerService.resetPassword(commonDto);
+    public ApiResponse resetPassword(@RequestBody CustomerDTO customerDTO) throws Exception {
+       return customerService.resetPassword(customerDTO);
     }
     @GetMapping(value = "/getbalance/{accountnumber}")
     public ApiResponse getBalance(@PathVariable("accountnumber") String accountNumber){

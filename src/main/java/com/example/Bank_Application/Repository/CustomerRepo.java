@@ -5,10 +5,12 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 @Repository
 public interface CustomerRepo extends JpaRepository<CustomerEntity, Long> {
 
-    CustomerEntity findOneByEmailIDIgnoreCaseAndPassword(String emailID, String password);
+//    CustomerEntity findOneByEmailIDIgnoreCaseAndPassword(String emailID, String password);
 
 
 
@@ -27,10 +29,12 @@ public interface CustomerRepo extends JpaRepository<CustomerEntity, Long> {
     CustomerEntity findByEmailID(String emailID);
     @Query(value = "select * from customer_details where otp_number = :otpNumber",nativeQuery = true)
     CustomerEntity resetPassword(Long otpNumber);
-    @Query(value = "select * from customer_details where password = :password",nativeQuery = true)
-    CustomerEntity changePwd(String password);
-
-
+//    @Query(value = "select * from customer_details where password = :password",nativeQuery = true)
+//    CustomerEntity changePwd(String password);
+    @Query(value = "select * from customer_details where emailid = :emailID",nativeQuery = true)
+    CustomerEntity findOneByEmailID(String emailID);
+    @Query(value = "select * from customer_details where user_name = :userName",nativeQuery = true)
+    CustomerEntity changePwd(String userName);
 
 
 //    @Query(value = "select * from customer_details where phone_number = :phoneNumber",nativeQuery = true)

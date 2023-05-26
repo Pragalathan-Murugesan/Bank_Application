@@ -3,9 +3,7 @@ package com.example.Bank_Application.Services;
 import com.example.Bank_Application.APIResponse.ApiResponse;
 import com.example.Bank_Application.DTOClass.CommonDto;
 import com.example.Bank_Application.DTOClass.CustomerDTO;
-import com.example.Bank_Application.DTOClass.TransactionDTO;
 import com.example.Bank_Application.Entity.CustomerEntity;
-import com.example.Bank_Application.Entity.TransactionEntity;
 import com.example.Bank_Application.Entity.UserProfileEntity;
 import com.example.Bank_Application.Implements.CustomerControllerImple;
 import com.example.Bank_Application.JWT.JwtTokens;
@@ -16,8 +14,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+
 import java.time.Instant;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
 
 @Service
 public class CustomerService implements CustomerControllerImple {
@@ -31,6 +33,8 @@ public class CustomerService implements CustomerControllerImple {
     private ApiResponse apiResponse;
     @Autowired
     private JwtTokens jwtTokens;
+    String encryptPwd;
+    BCryptPasswordEncoder bCryptPasswordEncoder = new BCryptPasswordEncoder();
 
 
     public ApiResponse createAccount(CommonDto commonDto) throws Exception {
@@ -41,7 +45,7 @@ public class CustomerService implements CustomerControllerImple {
         try {
             CustomerEntity create = new CustomerEntity();
             BCryptPasswordEncoder bCryptPasswordEncoder = new BCryptPasswordEncoder();
-            String encryptPwd = bCryptPasswordEncoder.encode(commonDto.getPassword());
+            encryptPwd = bCryptPasswordEncoder.encode(commonDto.getPassword());
             create.setPassword(encryptPwd);
             create.setUserName(commonDto.getUserName());
             create.setEmailID(commonDto.getEmailID());
@@ -91,26 +95,26 @@ public class CustomerService implements CustomerControllerImple {
     @Override
     public ApiResponse login(CustomerDTO customerDTO) throws Exception {
         try {
-            BCryptPasswordEncoder bCryptPasswordEncoder = new BCryptPasswordEncoder();
-
-            CustomerEntity customerEntity = customerRepo.findOneByEmailIDIgnoreCaseAndPassword(customerDTO.getEmailID(), String.valueOf(bCryptPasswordEncoder.matches(customerDTO.getPassword(),customerDTO.getPassword())));
+//            CustomerEntity customerEntity = customerRepo.findOneByEmailIDIgnoreCaseAndPassword(customerDTO.getEmailID(),customerDTO.getPassword());
+            CustomerEntity customerEntity = customerRepo.findOneByEmailID(customerDTO.getEmailID());
             if (customerEntity == null) {
                 apiResponse.setData("null");
                 apiResponse.setMessage("Login Failed");
                 apiResponse.setError(HttpStatus.BAD_REQUEST.value());
                 return apiResponse;
             }
-            Long currentTimestamp = Instant.now().getEpochSecond();
-            customerEntity.setLoginAt(currentTimestamp);
-            customerEntity.setUpdateAt(currentTimestamp);
-            customerRepo.save(customerEntity);
+            if (bCryptPasswordEncoder.matches(customerDTO.getPassword(), customerEntity.getPassword())) {
+                Long currentTimestamp = Instant.now().getEpochSecond();
+                customerEntity.setLoginAt(currentTimestamp);
+                customerRepo.save(customerEntity);
 
-            String token = jwtTokens.generateToken(new CustomerEntity());
-            Map<String, Object> data = new HashMap<>();
-            data.put("token", token);
-            apiResponse.setError(HttpStatus.OK);
-            apiResponse.setMessage("Login Successfully");
-            apiResponse.setData(data);
+                String token = jwtTokens.generateToken(new CustomerEntity());
+                Map<String, Object> data = new HashMap<>();
+                data.put("token", token);
+                apiResponse.setError(HttpStatus.OK);
+                apiResponse.setMessage("Login Successfully");
+                apiResponse.setData(data);
+            }
         } catch (Exception e) {
             throw new Exception(e.getMessage());
         }
@@ -151,23 +155,33 @@ public class CustomerService implements CustomerControllerImple {
         return apiResponse;
     }
 
-    public ApiResponse changePassword(String password, String newPassword, CommonDto commonDto) throws Exception {
-        try {
-            BCryptPasswordEncoder bCryptPasswordEncoder = new BCryptPasswordEncoder();
-           CustomerEntity customerEntity1 = new CustomerEntity();
+    public ApiResponse changePassword(CustomerDTO customerDTO) throws Exception {
+try {
+            CustomerEntity customerEntity = customerRepo.changePwd(customerDTO.getUserName());
+        String db =customerEntity.getPassword();
 
-            CustomerEntity customerEntity = customerRepo.changePwd(commonDto.getPassword());
-            String encrypt = bCryptPasswordEncoder.encode(newPassword);
-            if (password!=newPassword){
-                customerEntity.setPassword(encrypt);
-                customerRepo.save(customerEntity);
-                apiResponse.setMessage("Password Updated Successfully");
-                apiResponse.setData(customerEntity);
-                apiResponse.setError(HttpStatus.OK.value());
-            }else {
+        if ( customerDTO.getPassword()!=customerDTO.getNewPassword() & bCryptPasswordEncoder.matches(customerDTO.getPassword(),db)) {
+            customerDTO.setNewPassword(customerDTO.getNewPassword());
+            customerDTO.setConformPassword(customerDTO.getConformPassword());
+            String change = bCryptPasswordEncoder.encode(customerDTO.getNewPassword());
+
+                 if (customerDTO.getNewPassword().equals(customerDTO.getConformPassword())) {
+                        customerEntity.setPassword(change);
+                        customerRepo.save(customerEntity);
+                        apiResponse.setMessage("Updated Password Successfully");
+                        apiResponse.setData(customerEntity);
+                        apiResponse.setError(HttpStatus.OK.value());
+                 }else {
+                     apiResponse.setMessage("Update Password Failed");
+                     apiResponse.setData(null);
+                     apiResponse.setError(HttpStatus.OK.value());
+                     return apiResponse;
+                 }
+                } else {
                 apiResponse.setMessage("Please Enter Correct Password");
-                apiResponse.setData(customerEntity);
+                apiResponse.setData(null);
                 apiResponse.setError(HttpStatus.BAD_REQUEST.value());
+                return apiResponse;
             }
         } catch (Exception e) {
             throw new Exception(e.getMessage());
@@ -189,30 +203,36 @@ public class CustomerService implements CustomerControllerImple {
     }
 
     @Override
-    public ApiResponse resetPassword(CommonDto commonDto) throws Exception {
-        CustomerEntity customerEntity = customerRepo.resetPassword(commonDto.getOtpNumber());
+    public ApiResponse resetPassword(CustomerDTO customerDTO) throws Exception {
+        try {
+            CustomerEntity customerEntity = customerRepo.resetPassword(customerDTO.getOtpNumber());
 
-        commonDto.setNewPassword(commonDto.getNewPassword());
-        commonDto.setConformPassword(commonDto.getConformPassword());
-        if (commonDto.getNewPassword()==commonDto.getConformPassword()){
-            customerEntity.setPassword(commonDto.getConformPassword());
-            customerRepo.save(customerEntity);
-            apiResponse.setError(HttpStatus.OK.value());
-            apiResponse.setData(customerEntity);
-            apiResponse.setMessage("Reset Password Successfully");
-        }else {
-            apiResponse.setError(HttpStatus.BAD_REQUEST.value());
-            apiResponse.setData(null);
-            apiResponse.setMessage("Please Enter Same Password");
+            customerDTO.setNewPassword(customerDTO.getNewPassword());
+            customerDTO.setConformPassword(customerDTO.getConformPassword());
+            String change = bCryptPasswordEncoder.encode(customerDTO.getNewPassword());
+
+            if (customerDTO.getNewPassword().equals(customerDTO.getConformPassword())) {
+                customerEntity.setPassword(change);
+                customerRepo.save(customerEntity);
+                apiResponse.setMessage("Updated Password Successfully");
+                apiResponse.setData(customerEntity);
+                apiResponse.setError(HttpStatus.OK.value());
+            } else {
+                apiResponse.setMessage("Update Password Failed");
+                apiResponse.setData(null);
+                apiResponse.setError(HttpStatus.OK.value());
+                return apiResponse;
+            }
+        }catch (Exception e){
+            throw  new Exception(e.getMessage());
         }
-
         return apiResponse;
-}
+    }
 
     @Override
-    public ApiResponse getBalance( String accountNumber) {
+    public ApiResponse getBalance(String accountNumber) {
         UserProfileEntity userProfileEntity = userProfileRepo.getByBalance(accountNumber);
-       Long balance =  userProfileEntity.getBalance();
+        Long balance = userProfileEntity.getBalance();
         apiResponse.setError(HttpStatus.OK.value());
         apiResponse.setData(balance);
         apiResponse.setMessage("This Account Balance Is:");

@@ -40,6 +40,8 @@ public class CustomerDTO {
     private Long createAt;
     private Long loginAt;
     private  String conformPassword;
+    private  String newPassword;
+    private Long otpNumber;
 
 
 }

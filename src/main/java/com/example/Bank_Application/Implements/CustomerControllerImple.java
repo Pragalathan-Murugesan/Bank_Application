@@ -25,9 +25,9 @@ public interface CustomerControllerImple {
 
     ApiResponse forgotPassword(String emailID);
 
-    ApiResponse resetPassword(CommonDto commonDto) throws Exception;
+    ApiResponse resetPassword(CustomerDTO customerDTO) throws Exception;
 
     ApiResponse getBalance(String accountNumber);
 
-    ApiResponse changePassword(String password, String newPassword, CommonDto commonDto) throws Exception;
+    ApiResponse changePassword( CustomerDTO customerDTO) throws Exception;
 }
